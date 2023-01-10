@@ -2,6 +2,8 @@ import itertools
 import numpy as np
 from os.path import join
 from data_prep import edge_loader, layer_loader, node_loader, edges_to_array
+from matplotlib import pyplot as plt
+import networkx as nx
 
 def main():
 	dir = join('dane','CS-Aarhus_Multiplex_Social','Dataset')
@@ -20,11 +22,23 @@ def main():
 
 	arr = edges_to_array(edges, len(layers), len(nodes))
 
-	cor_edges = [(i,j) for i,j in itertools.combinations(range(len(layers)), 2)]
-	cor_weights = []
-	for i,j in cor_edges:
-		cor_weights.append(pair_multiplexity(arr, i, j, len(nodes)))
+	cor_edges = [[i,j] for i,j in itertools.combinations(range(len(layers)), 2)]
+	weights = []
+	G = nx.Graph()
 
+	for i,j in cor_edges:
+		G.add_edge(i,j, weight = pair_multiplexity(arr, i, j, len(nodes)))
+
+	# G.add_weighted_edges_from(weighted_edges)
+	# for ij,w in zip(cor_edges,weights):
+	# 	print(ij,w)
+	weights = list( nx.get_edge_attributes(G, 'weight').values() )
+	scaled = [w*4 for w in weights]
+	
+
+	pos = nx.circular_layout(G)
+	nx.draw(G, pos, with_labels = True, font_weight = 'bold', width = scaled)
+	plt.show()
 
 
 def pair_multiplexity(matrix, a_layer, b_layer, N):
@@ -36,46 +50,46 @@ def pair_multiplexity(matrix, a_layer, b_layer, N):
 
 	return out/N
 
-def Hamming_dist(matrix, a_layer, b_layer, N):
-	out = 0
-	N_a = 0
-	N_b = 0
-	for i in range(N):
-		a = 1 if 1 in matrix[a_layer,i] else 0
-		b = 1 if 1 in matrix[b_layer,i] else 0
-		N_a += a
-		N_b += b
-		out += (b*(1-b) + a*(1-a))
+# def Hamming_dist(matrix, a_layer, b_layer, N):
+# 	out = 0
+# 	N_a = 0
+# 	N_b = 0
+# 	for i in range(N):
+# 		a = 1 if 1 in matrix[a_layer,i] else 0
+# 		b = 1 if 1 in matrix[b_layer,i] else 0
+# 		N_a += a
+# 		N_b += b
+# 		out += (b*(1-b) + a*(1-a))
 
-	divide = min(N_a + N_b, N)
+# 	divide = min(N_a + N_b, N)
 
-	return out/divide
-
-
-def cond_prob(matrix, a_layer, b_layer, k_a, k_b, N):
-	sum_a = 0
-	sum_b = 0
-	for i in range(N):
-		check = True if np.sum(matrix[a_layer, i]) == k_a else False
-		if check:
-			sum_a+=1
-			check = True if np.sum(matrix[b_layer, i]) == k_b else False
-			sum_b = sum_b + 1 if check else sum_b
-
-	if sum_a != 0:
-		return sum_b/sum_a
-
-	return 0
+# 	return out/divide
 
 
-def inter_layer_cor(matrix, a_layer, b_layer, k_a, N):
-	k_set = set()
-	k_set.update([np.sum(matrix[b_layer,i]) for i in range(N)])
+# def cond_prob(matrix, a_layer, b_layer, k_a, k_b, N):
+# 	sum_a = 0
+# 	sum_b = 0
+# 	for i in range(N):
+# 		check = True if np.sum(matrix[a_layer, i]) == k_a else False
+# 		if check:
+# 			sum_a+=1
+# 			check = True if np.sum(matrix[b_layer, i]) == k_b else False
+# 			sum_b = sum_b + 1 if check else sum_b
 
-	out = 0
-	for k in k_set:
-		out += (k * cond_prob(matrix, a_layer, b_layer, k_a, k, N))
-	return out
+# 	if sum_a != 0:
+# 		return sum_b/sum_a
+
+# 	return 0
+
+
+# def inter_layer_cor(matrix, a_layer, b_layer, k_a, N):
+# 	k_set = set()
+# 	k_set.update([np.sum(matrix[b_layer,i]) for i in range(N)])
+
+# 	out = 0
+# 	for k in k_set:
+# 		out += (k * cond_prob(matrix, a_layer, b_layer, k_a, k, N))
+# 	return out
 
 
 
