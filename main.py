@@ -4,6 +4,11 @@ from os.path import join
 from data_prep import edge_loader, layer_loader, node_loader, edges_to_array
 from matplotlib import pyplot as plt
 import networkx as nx
+import multiprocessing as mp
+from concurrent.futures import ProcessPoolExecutor
+
+
+
 
 def main():
 	dir = join('dane','CS-Aarhus_Multiplex_Social','Dataset')
@@ -11,14 +16,21 @@ def main():
 	layer_file = 'CS-Aarhus_layers.txt'
 	nodes_name = 'CS-Aarhus_nodes.txt'
 
+	
+	# dir = join('dane','EUAir_Multiplex_Transport','Dataset')
+	# edge_file = 'EUAirTransportation_multiplex.edges'
+	# layer_file = 'EUAirTransportation_layers.txt'
+	# nodes_name = 'EUAirTransportation_nodes.txt'
+
+	
+	# dir = join('dane','London_Multiplex_Transport','Dataset')
+	# edge_file = 'london_transport_multiplex.edges'
+	# layer_file = 'london_transport_layers.txt'
+	# nodes_name = 'london_transport_nodes.txt'
+
 	edges = edge_loader(join(dir, edge_file))
 	layers = layer_loader(join(dir,layer_file))
 	nodes = node_loader(join(dir,nodes_name))
-
-	# for edge in edges:
-	# 	print(edge)
-	# print(layers)
-	# print(len(nodes))
 
 	arr = edges_to_array(edges, len(layers), len(nodes))
 
@@ -29,16 +41,19 @@ def main():
 	for i,j in cor_edges:
 		G.add_edge(i,j, weight = pair_multiplexity(arr, i, j, len(nodes)))
 
-	# G.add_weighted_edges_from(weighted_edges)
-	# for ij,w in zip(cor_edges,weights):
-	# 	print(ij,w)
 	weights = list( nx.get_edge_attributes(G, 'weight').values() )
 	scaled = [w*4 for w in weights]
 	
 
 	pos = nx.circular_layout(G)
-	nx.draw(G, pos, with_labels = True, font_weight = 'bold', width = scaled)
+	nx.draw(G, pos, with_labels = True, font_weight = 'bold', width = scaled, labels = layers)
 	plt.show()
+
+
+
+
+
+
 
 
 def pair_multiplexity(matrix, a_layer, b_layer, N):
@@ -50,47 +65,75 @@ def pair_multiplexity(matrix, a_layer, b_layer, N):
 
 	return out/N
 
-# def Hamming_dist(matrix, a_layer, b_layer, N):
-# 	out = 0
-# 	N_a = 0
-# 	N_b = 0
-# 	for i in range(N):
-# 		a = 1 if 1 in matrix[a_layer,i] else 0
-# 		b = 1 if 1 in matrix[b_layer,i] else 0
-# 		N_a += a
-# 		N_b += b
-# 		out += (b*(1-b) + a*(1-a))
-
-# 	divide = min(N_a + N_b, N)
-
-# 	return out/divide
 
 
-# def cond_prob(matrix, a_layer, b_layer, k_a, k_b, N):
-# 	sum_a = 0
-# 	sum_b = 0
-# 	for i in range(N):
-# 		check = True if np.sum(matrix[a_layer, i]) == k_a else False
-# 		if check:
-# 			sum_a+=1
-# 			check = True if np.sum(matrix[b_layer, i]) == k_b else False
-# 			sum_b = sum_b + 1 if check else sum_b
 
-# 	if sum_a != 0:
-# 		return sum_b/sum_a
-
-# 	return 0
+# public static BufferedImage gen_pic(int w, int h, double cr_left, double cr_right, double ci_top, double ci_bottom, int iter, int[] chunkSize, ThreadPoolExecutor exec) throws InterruptedException {
+	# double cr_span, ci_span;
+	# cr_span = cr_right - cr_left;
+	# ci_span = ci_top - ci_bottom;
+	# BufferedImage img = new BufferedImage(w,h,BufferedImage.TYPE_INT_RGB);
 
 
-# def inter_layer_cor(matrix, a_layer, b_layer, k_a, N):
-# 	k_set = set()
-# 	k_set.update([np.sum(matrix[b_layer,i]) for i in range(N)])
+	# CountDownLatch cl = new CountDownLatch((w/chunkSize[0]) * (h/chunkSize[1]));
 
-# 	out = 0
-# 	for k in k_set:
-# 		out += (k * cond_prob(matrix, a_layer, b_layer, k_a, k, N))
-# 	return out
+	# for(int i = 0; i < w; i+=chunkSize[0]){
+		# for(int j = 0; j < h; j+=chunkSize[1]){
+			# final int start_x = i, stop_x, start_y = j, stop_y;
 
+			# if(start_x + 2 * chunkSize[0] > w){
+				# stop_x = w;
+			# } else{stop_x = start_x + chunkSize[0];}
+
+			# if(start_y + 2 * chunkSize[1] > h){
+				# stop_y = h;
+			# } else{stop_y = start_y + chunkSize[1];}
+
+			# exec.execute(() -> {
+				# for(int x = start_x; x < stop_x; x++){
+					# for(int y = start_y; y < stop_y; y++){
+						# double zi = 0, zr = 0, z_abs = 0, cr, ci;
+
+						# // konwersja pikseli na ci i cr
+						# ci = ci_top - y * ci_span / h;
+						# cr = x * cr_span / w + cr_left;
+
+						# int itr = 0;
+						# while(itr < iter && z_abs < 2){
+							# double zrzr = zr*zr;
+							# double zizi = zi*zi;
+
+							# zi = 2.0 * zr * zi + ci;
+							# zr = zrzr - zizi + cr;
+							# z_abs = Math.sqrt(zizi + zrzr);
+							
+							# itr++;
+						# }
+						
+							
+							
+						# if(itr == iter){
+						#    img.setRGB(x, y, new Color(100,0,0).getRGB());
+						# } else {
+							# int clr_aux = 255 - (int)Math.floor(255.0 * (double)itr/(double)iter);
+							# img.setRGB(x, y, new Color(clr_aux,255,clr_aux).getRGB());
+						# }
+
+
+					# }
+				# }
+
+				# cl.countDown();
+			# });
+
+		# }
+	# }
+	   
+
+	# cl.await();
+
+	# return img;
+# }
 
 
 

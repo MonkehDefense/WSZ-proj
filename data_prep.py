@@ -17,6 +17,8 @@ def main():
 
 	arr = edges_to_array(edges, len(layers), len(nodes))
 
+	print(layers)
+
 	# for edge in edges:
 	# 	print(edge)
 	# print(layers)
@@ -35,7 +37,7 @@ def edge_loader(path):
 	return edges
 
 def layer_loader(path):
-	layers = []
+	layers = dict()
 	
 	with open(path) as file:
 		i = True
@@ -44,8 +46,11 @@ def layer_loader(path):
 				i = not i
 				continue
 			contents = line.split(sep=' ')
+			contents[1] = contents[1].replace('\n','').replace('_',' ')
+
 			contents[0] = int(contents[0]) - 1
-			layers.append(contents)
+			# layers.append(contents)
+			layers[contents[0]] = contents[1]
 	return layers
 
 def node_loader(path):
