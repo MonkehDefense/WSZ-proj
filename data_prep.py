@@ -49,7 +49,6 @@ def layer_loader(path):
 			contents[1] = contents[1].replace('\n','').replace('_',' ')
 
 			contents[0] = int(contents[0]) - 1
-			# layers.append(contents)
 			layers[contents[0]] = contents[1]
 	return layers
 

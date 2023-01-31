@@ -4,12 +4,15 @@ from data_prep import edge_loader, layer_loader, node_loader, edges_to_array
 from matplotlib import pyplot as plt
 import networkx as nx
 import multiprocessing as mp
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 
 
 
 
 def main():
+
+	# wybór danych
+
 	# dir = join('dane','CS-Aarhus_Multiplex_Social','Dataset')
 	# edge_file = 'CS-Aarhus_multiplex.edges'
 	# layer_file = 'CS-Aarhus_layers.txt'
@@ -27,31 +30,35 @@ def main():
 
 
 
+	# załadowanie danych
 	edges = edge_loader(join(dir, edge_file))
 	layers = layer_loader(join(dir,layer_file))
 	nodes = node_loader(join(dir,nodes_name))
 
+	# pozyskanie wielopoziomowej macierzy sąsiedztwa
 	arr = edges_to_array(edges, len(layers), len(nodes))
 
-	cor_edges = [[i,j] for i,j in itertools.combinations(range(len(layers)), 2)]
-	G = nx.Graph()
-
-
+	# Przygotowanie egzekutora
 	N = mp.cpu_count()
 	pool = ThreadPoolExecutor(N)
+	# pool = ProcessPoolExecutor(N)
 
+	# przygotowanie zakresów dla wątków/procesów
 	M = len(nodes)
-	stops = [i for i in range(0, M, M//N)]
+	stops = [i*(M//N) for i in range(N)]
 	stops[-1] = M
 
-
+	# dla każdej pary poziomów w sieci oblicz pairwise multiplexity i ustaw jako wagę krawędzi
+	cor_edges = [[i,j] for i,j in itertools.combinations(range(len(layers)), 2)]
+	G = nx.Graph()
+	# with ProcessPoolExecutor(N) as pool:
 	for i,j in cor_edges:
 		futures = [pool.submit(pair_multiplexity, arr, i, j, stops[k], stops[k+1])			for k in range(len(stops) - 1)]
 		weight = sum([future.result() for future in futures]) / M
 
 		G.add_edge(i,j, weight = weight)
 
-
+	# przeskalowanie wag na grubości krawędzi
 	weights = list( nx.get_edge_attributes(G, 'weight').values() )
 	scaled = [w*10 for w in weights]
 	
