@@ -6,7 +6,8 @@ import networkx as nx
 import multiprocessing as mp
 from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 import time
-
+import copy
+import asyncio
 
 
 
@@ -96,10 +97,77 @@ def pair_multiplexity(matrix, a_layer, b_layer, start, stop):
 	return out
 
 
+async def test(matrix):
+	out = 0
+	for i in range(100):
+		out+=1
 
+	return out/100
 
 
 
 
 if __name__ == '__main__':
-	main()
+	start = time.time()
+    
+
+	# wybór danych
+
+	# dir = join('dane','CS-Aarhus_Multiplex_Social','Dataset')
+	# edge_file = 'CS-Aarhus_multiplex.edges'
+	# layer_file = 'CS-Aarhus_layers.txt'
+	# nodes_name = 'CS-Aarhus_nodes.txt'
+	
+	dir = join('dane','EUAir_Multiplex_Transport','Dataset')
+	edge_file = 'EUAirTransportation_multiplex.edges'
+	layer_file = 'EUAirTransportation_layers.txt'
+	nodes_name = 'EUAirTransportation_nodes.txt'
+
+	# dir = join('dane','HumanMicrobiome_Multiplex_Biological','Dataset')
+	# edge_file = 'HumanMicrobiome_multiplex.edges'
+	# layer_file = 'HumanMicrobiome_layers.txt'
+	# nodes_name = 'HumanMicrobiome_nodes.txt'
+
+
+
+	# załadowanie danych
+	edges = edge_loader(join(dir, edge_file))
+	layers = layer_loader(join(dir,layer_file))
+	nodes = node_loader(join(dir,nodes_name))
+
+	# pozyskanie wielopoziomowej macierzy sąsiedztwa
+	arr = edges_to_array(edges, len(layers), len(nodes))
+
+
+
+	N = mp.cpu_count()
+	M = len(nodes)
+	stops = [i*(M//N) for i in range(N)]
+	stops[-1] = M
+
+	
+	
+
+	# dla każdej pary poziomów w sieci oblicz pairwise multiplexity i ustaw jako wagę krawędzi
+	G = nx.Graph()
+	# with ProcessPoolExecutor(N) as pool:
+	# 	for i,j in itertools.combinations(range(len(layers)), 2):
+	# 		results = pool.map(test)
+
+	# 		weight = sum([result for result in results]) / M
+
+	# 		G.add_edge(i,j, weight = weight)
+
+
+	with mp.Pool(N) as pool:
+		for i,j in itertools.combinations(range(len(layers)), 2):
+			# pool.submit(pair_multiplexity, arr, i, j, stops[k], stops[k+1])			for k in range(len(stops) - 1)
+			processes = [pool.apply_async(test,(arr,)) for k in range(len(stops) - 1)]
+			results = [process.get() for process in processes]
+	# 		weight = sum([result for result in results]) / M
+
+	# 		G.add_edge(i,j, weight = weight)
+
+
+	finish = time.time()
+	print(f'Czas wykonania: {finish-start}')
