@@ -68,7 +68,7 @@ def node_loader(path):
 
 
 def edges_to_array(edges, layers, nodes):
-	arr = np.zeros((layers, nodes, nodes))
+	arr = np.zeros((layers, nodes, nodes),dtype=np.int16)
 	
 	for i in range(len(edges)):
 		edge = edges[i]

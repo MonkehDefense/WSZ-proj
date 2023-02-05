@@ -17,15 +17,15 @@ def main():
 
 	# wybór danych
 
-	dir = join('dane','CS-Aarhus_Multiplex_Social','Dataset')
-	edge_file = 'CS-Aarhus_multiplex.edges'
-	layer_file = 'CS-Aarhus_layers.txt'
-	nodes_name = 'CS-Aarhus_nodes.txt'
+	# dir = join('dane','CS-Aarhus_Multiplex_Social','Dataset')
+	# edge_file = 'CS-Aarhus_multiplex.edges'
+	# layer_file = 'CS-Aarhus_layers.txt'
+	# nodes_name = 'CS-Aarhus_nodes.txt'
 	
-	# dir = join('dane','EUAir_Multiplex_Transport','Dataset')
-	# edge_file = 'EUAirTransportation_multiplex.edges'
-	# layer_file = 'EUAirTransportation_layers.txt'
-	# nodes_name = 'EUAirTransportation_nodes.txt'
+	dir = join('dane','EUAir_Multiplex_Transport','Dataset')
+	edge_file = 'EUAirTransportation_multiplex.edges'
+	layer_file = 'EUAirTransportation_layers.txt'
+	nodes_name = 'EUAirTransportation_nodes.txt'
 
 	# dir = join('dane','HumanMicrobiome_Multiplex_Biological','Dataset')
 	# edge_file = 'HumanMicrobiome_multiplex.edges'
@@ -53,10 +53,9 @@ def main():
 	stops[-1] = M
 
 	# dla każdej pary poziomów w sieci oblicz pairwise multiplexity i ustaw jako wagę krawędzi
-	cor_edges = [[i,j] for i,j in itertools.combinations(range(len(layers)), 2)]
 	G = nx.Graph()
 	# with ProcessPoolExecutor(N) as pool:
-	for i,j in cor_edges:
+	for i,j in itertools.combinations(range(len(layers)), 2):
 		futures = [pool.submit(pair_multiplexity, arr, i, j, stops[k], stops[k+1])			for k in range(len(stops) - 1)]
 		weight = sum([future.result() for future in futures]) / M
 
@@ -66,13 +65,13 @@ def main():
 	weights = list( nx.get_edge_attributes(G, 'weight').values() )
 	scaled = [w*10 for w in weights]
 	
-	# pos = nx.circular_layout(G)
-	pos = nx.spring_layout(G)
+	pos = nx.circular_layout(G)
+	# pos = nx.spring_layout(G)
 	# pos = nx.kamada_kawai_layout(G)
 
 	nx.draw_networkx_nodes(G, pos)
 	nx.draw_networkx_labels(G,pos,layers, bbox=dict(facecolor='yellow', alpha=.25))#, font_weight='bold'
-	nx.draw_networkx_edges(G,pos, width=scaled, edge_color='#4169e1')	#, connectionstyle='Angle, angleA=90, angleB=20, rad=0.2'
+	nx.draw_networkx_edges(G,pos, width=scaled, edge_color='#707070')	#, connectionstyle='Angle, angleA=90, angleB=20, rad=0.2'  , edge_color='#4169e1'
 
 	finish = time.time()
 	print(f'Czas wykonania: {finish-start}')
